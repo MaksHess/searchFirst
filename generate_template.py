@@ -1,3 +1,4 @@
+import sys
 import napari
 import numpy as np
 from pathlib import Path
@@ -7,11 +8,13 @@ from utils import available_wells, load_well, stitch_arrays
 
 
 def main():
-    fld = Path(r"Z:\hmax\SearchFirst\20210823-FirstPassMeasurement_20210823_113818\AssayPlate_Greiner_#655090")
+    fld = Path(sys.argv[1])
 
     imgs = []
     for w in available_wells(fld):
-        imgs.append(stitch_arrays(load_well(fld, well_name=w)))
+        print(w)
+        _, tiles = load_well(fld, well_name=w)
+        imgs.append(stitch_arrays(tiles))
 
     viewer = napari.Viewer()
     viewer.add_image(np.stack(imgs))

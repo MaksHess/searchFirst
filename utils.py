@@ -1,19 +1,20 @@
 import re
 import imageio
+import numpy as np
 
 def main():
     pass
 
 def available_wells(fld):
     pattern = re.compile(r'.*_([A-H][0-1]\d)_.*')
-    well_names = set(pattern.match(e.name).group(1) for e in fld.glob("*") if pattern.match(e.name))
+    well_names = set(pattern.match(e.name).group(1) for e in fld.rglob("*") if pattern.match(e.name))
     return well_names
 
 
 def load_well(fld, well_name):
     names = []
     imgs = []
-    for fn in fld.glob(f"*_{well_name}_*.tif"):
+    for fn in fld.rglob(f"*_{well_name}_*.tif"):
         names.append(fn)
         imgs.append(imageio.imread(fn))
     return names, imgs
