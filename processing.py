@@ -22,7 +22,7 @@ try:
     from utils import available_wells, load_well, stitch_arrays, unstitch_arrays
     import random
 except Exception as e:
-    logging.error(f'{e})
+    logging.error(f'{e}')
 
 
 
