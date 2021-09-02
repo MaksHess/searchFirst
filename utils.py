@@ -5,9 +5,11 @@ import numpy as np
 def main():
     pass
 
-def available_wells(fld):
+def available_wells(fld, return_sorted=True):
     pattern = re.compile(r'.*_([A-H][0-1]\d)_.*')
     well_names = set(pattern.match(e.name).group(1) for e in fld.rglob("*") if pattern.match(e.name))
+    if return_sorted:
+        return sorted(well_names)
     return well_names
 
 

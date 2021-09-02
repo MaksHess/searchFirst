@@ -1,9 +1,8 @@
-import sys
 import napari
 import numpy as np
 from pathlib import Path
 import imageio
-import re
+import sys
 from utils import available_wells, load_well, stitch_arrays
 
 
@@ -18,7 +17,7 @@ def main():
 
     viewer = napari.Viewer()
     viewer.add_image(np.stack(imgs))
-    points = viewer.add_points(ndim=3)
+    viewer.add_points(ndim=3)
 
     @viewer.bind_key('s')
     def template_crop(viewer, radius=512):

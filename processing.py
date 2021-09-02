@@ -1,9 +1,9 @@
 import logging
+
 logging.basicConfig(
     level=logging.INFO,
-    # format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(r'C:\Users\CVUser\Documents\Python\searchFirst\processing.log'),
+        logging.FileHandler(r'processing.log'),
         logging.StreamHandler()
     ]
 )
@@ -21,20 +21,19 @@ try:
     import argparse
     from utils import available_wells, load_well, stitch_arrays, unstitch_arrays
     import random
-except Exception as e:
-    logging.error(f'{e}')
-
-
-
+except Exception as import_exception:
+    logging.error(f'{import_exception}')
 
 
 def main():
     logging.info('starting main...')
     try:
-        parser = argparse.ArgumentParser(description="SearchFirst imaging of wells based on matching a template image. ")
+        parser = argparse.ArgumentParser(
+            description="SearchFirst imaging of wells based on matching a template image. ")
         parser.add_argument(dest='folder', type=str, help='Full path to folder of first pass.')
-        parser.add_argument('-ot', '--object_threshold', type=float, default=0.9,
-                            help='Threshold [0.0 - 1.0] for rejecting objects (default 0.9).')
+        parser.add_argument('-n', '--n_objects_per_site', type=int, default=3)
+        parser.add_argument('-ot', '--object_threshold', type=float, default=0.5,
+                            help='Threshold [0.0 - 1.0] for rejecting objects (default 0.5).')
         parser.add_argument('-d', '--downsampling', type=float, default=0.25,
                             help='Downsampling ratio to speed up processing (default 0.25).')
         parser.add_argument('-t', '--template_path', type=str,
@@ -43,17 +42,17 @@ def main():
                             help='Whether to generate plots of the results.')
 
         args = parser.parse_args()
-        run_processing(args.folder, args.object_threshold, args.downsampling, args.template_path, args.plot_output)
-    except Exception as e:
-        logging.error(f'{e}')
+        run_processing(args.folder, args.object_threshold, args.downsampling, args.n_objects_per_site,
+                       args.template_path, args.plot_output)
+    except Exception as runtime_exception:
+        logging.error(f'{runtime_exception}')
 
 
-def run_processing(fld, object_threshold, downsampling, template_path=None, plot_output=True):
+def run_processing(fld, object_threshold, downsampling, n_objects_per_site, template_path=None, plot_output=True):
     fld = Path(fld)
 
     if not fld.is_dir():
-        eprint(ERROR_FMT % 'Provided full folder path is not valid')
-        exit(1)
+        raise NotADirectoryError(f"Directory {fld.as_posix()} does not exist!")
 
     logging.info(f'processing folder {fld.as_posix()}')
     if template_path is None:
