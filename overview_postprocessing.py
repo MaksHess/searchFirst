@@ -16,10 +16,19 @@ def main():
 
     for well in available_wells(args.folder):
         print(f"Processing well {well}...")
+        out_fn = out_folder / f"{well}.png"
+        if out_fn.exists():
+            print(f"Processed already.")
+            continue
+        print(f'Loading files...')
         names, tiles = load_well(args.folder, well)
+        print(f'stitching...')
         stitched = stitch_arrays(tiles)
+        print(f'downsampling...')
         stitched_ds = zoom(stitched, args.downsampling)
-        imageio.imwrite(out_folder / f"{well}.png", stitched_ds)
+        print(f'writing file {out_fn.name}...')
+        print()
+        imageio.imwrite(out_fn, stitched_ds)
     print("Done.")
 
 
