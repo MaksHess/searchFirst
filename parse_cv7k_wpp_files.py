@@ -6,9 +6,12 @@ import numpy as np
 import re
 import imageio
 from utils import available_wells
+from itertools import cycle
+from collections import deque
 
 
 def main():
+    select_cycles = [0, 1, 2, 3, 4, 5]
     fn = r"Z:\hmax\SearchFirst\20210823-FirstPassMeasurement_20210823_113818\AssayPlate_Greiner_#655090\1009602002_Greiner_#655090.wpp"
     data = PlateData.from_file(fn)
     print('data loaded...')
@@ -17,17 +20,55 @@ def main():
     scl = np.array([1.3, 1.3])
 
     viewer = napari.Viewer()
-    viewer.add_shapes(plate.wells, shape_type='polygon', edge_color='#dababa', face_color='#00000000', scale=(1000, 1000),
-                      edge_width=0.3)
-    fld = Path(r"Z:\hmax\Zebrafish\20210902_96wellFibronectinPolyL-UV#2")
+    wells = viewer.add_shapes(plate.wells, shape_type='polygon', edge_color='#dababa', face_color='#00000000',
+                              scale=(1000, 1000),
+                              edge_width=0.3)
+    wells.properties['cycle_deque'] = deque(select_cycles[2:])
+
+    def view_current_cycle(viewer, current_cycle, previous_cycle):
+        print('setting visibilities...')
+        for layer in viewer.layers:
+            if layer.name.endswith(f"{current_cycle}"):
+                layer.visible = True
+            elif layer.name.endswith(f"{previous_cycle}"):
+                layer.visible = False
+
+    @viewer.bind_key('n')
+    def toggle_next(viewer):
+        print('next')
+        wells = viewer.layers['Shapes']
+        current_cycle = wells.properties['cycle_deque'][0]
+        wells.properties['cycle_deque'].rotate(1)
+        previous_cycle = wells.properties['cycle_deque'][0]
+        view_current_cycle(viewer, current_cycle, previous_cycle)
+        wells.properties['cycle_deque'].rotate(-2)
+
+    @viewer.bind_key('p')
+    def toggle_next(viewer):
+        print('previous')
+        wells = viewer.layers['Shapes']
+        current_cycle = wells.properties['cycle_deque'][0]
+        wells.properties['cycle_deque'].rotate(-1)
+        previous_cycle = wells.properties['cycle_deque'][0]
+        view_current_cycle(viewer, current_cycle, previous_cycle)
+        wells.properties['cycle_deque'].rotate(2)
+
+    fld = Path(r"Z:\hmax\Zebrafish\20210907_96wellFibronectinPolyL-UV#3")
     for well in available_wells(fld):
-        for cycle, color in zip(fld.rglob(f"*{well}.png"), ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']):
-            print(cycle)
-            img = imageio.imread(cycle)
-            offset = np.array(img.shape) // 2 * scl
-            t = np.array(plate.get_grid_point_str(well)) * 1000
-            viewer.add_image(img, translate=t - offset, blending='additive', scale=scl, colormap=color,
-                             contrast_limits=(100, np.quantile(img, 0.99)))
+        color = cycle(['red', 'green', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue'])
+        count = 0
+        visible = True
+        for i, fn_cycle in enumerate(list(fld.rglob(f"{well}.png"))):
+            if i in select_cycles:
+                if count >= 3:
+                    visible = False
+                print(fn_cycle.name, i)
+                img = imageio.imread(fn_cycle)
+                offset = np.array(img.shape) // 2 * scl
+                t = np.array(plate.get_grid_point_str(well)) * 1000
+                viewer.add_image(img, name=f"{well}_{i}", translate=t - offset, blending='additive', scale=scl,
+                                 colormap=next(color), contrast_limits=(100, np.quantile(img, 0.999)), visible=visible)
+                count += 1
 
     napari.run()
 

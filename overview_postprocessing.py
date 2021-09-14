@@ -10,6 +10,7 @@ def main():
         description="Post processing for well overviews.")
     parser.add_argument(dest='folder', type=Path, help='Full path to folder of overview acquisition.')
     parser.add_argument('-d', '--downsampling', type=float, default=0.5)
+    parser.add_argument('--alert', action='store_true')
     args = parser.parse_args()
     out_folder = args.folder / 'stitched'
     out_folder.mkdir(exist_ok=True)
@@ -19,6 +20,7 @@ def main():
         out_fn = out_folder / f"{well}.png"
         if out_fn.exists():
             print(f"Processed already.")
+            print()
             continue
         print(f'Loading files...')
         names, tiles = load_well(args.folder, well)
@@ -29,6 +31,9 @@ def main():
         print(f'writing file {out_fn.name}...')
         print()
         imageio.imwrite(out_fn, stitched_ds)
+    if args.alert:
+        import winsound
+        winsound.MessageBeep()
     print("Done.")
 
 

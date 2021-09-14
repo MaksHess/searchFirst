@@ -74,13 +74,22 @@ def run_processing(fld, object_threshold, downsampling, n_objects_per_site, temp
         match = match_template(stitched_ds, template_ds, pad_input=True, mode='constant', constant_values=100)
         match_thresholded = np.where(match > object_threshold, match, 0)
         if np.sum(match_thresholded) == 0:
-            logging.warning(f"no matches found in {well}!")
+            logging.warning(f"no matches found in {well}! Try lowering the `object_threshold` if you expected to find matches in this well.")
             continue
         maxima = extrema.h_maxima(match_thresholded, h=object_threshold)
-        if plot_output:
-            plot_results(stitched_ds, match, maxima, out_file=fld / f'plot_{well}.png')
+        n_objects = np.sum(maxima)
+        logging.info(f'{n_objects} objects found...')
+        score = match[np.where(maxima)]
+        nth_largest_score = -np.partition(-score, n_objects_per_site-1)[n_objects_per_site-1]
+        weighted_maxima = np.where(maxima, match, 0)
+        selected_maxima = np.where(weighted_maxima >= nth_largest_score, weighted_maxima, 0)
 
-        site_maxima = unstitch_arrays(maxima, ny=5, nx=4)
+        if plot_output:
+            unselected_maxima = np.where(np.logical_and(weighted_maxima > 0, weighted_maxima < nth_largest_score),
+                                         weighted_maxima, 0)
+            plot_results(stitched_ds, selected_maxima, unselected_maxima, out_file=fld / f'plot_{well}.png')
+
+        site_maxima = unstitch_arrays(selected_maxima, ny=5, nx=4)
 
         for name, site_maximum in zip(names, site_maxima):
             ys, xs = np.where(site_maximum)
@@ -92,18 +101,20 @@ def run_processing(fld, object_threshold, downsampling, n_objects_per_site, temp
                         c.writerow([i + 1, int(x / downsampling), int(y / downsampling)])
 
 
-def plot_results(stitched, match, maxima, out_file=None, ny=5, nx=4):
+def plot_results(stitched, selected_maxima, unselected_maxima, out_file=None, ny=5, nx=4):
     fig, ax = plt.subplots(figsize=(12, 12))
     plt.imshow(stitched, cmap='gray')
-    y, x = np.where(maxima)
-    confidence = match[np.where(maxima)]
-    sns.scatterplot(x=x, y=y, hue=confidence, palette='viridis', hue_norm=(0.8, 1.0), s=90)
+    y_true, x_true = np.where(selected_maxima)
+    y_false, x_false = np.where(unselected_maxima)
+    sns.scatterplot(x=x_true, y=y_true, color='#35d130', s=90)
+    sns.scatterplot(x=x_false, y=y_false, color='#e63232', s=90)
     ax.set_yticks(np.arange(ny) * stitched.shape[0] / ny)
     ax.set_xticks(np.arange(nx) * stitched.shape[1] / nx)
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.tick_params(length=0)
     plt.grid()
+    plt.tight_layout()
     if out_file:
         plt.savefig(out_file)
     else:
