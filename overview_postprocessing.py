@@ -24,7 +24,7 @@ def main():
             print()
             continue
         print(f'Loading files...')
-        names, tiles = load_well(args.folder, well)
+        names, tiles = load_well(args.folder, well, channel=args.channel)
         print(f'stitching...')
         stitched = stitch_arrays(tiles)
         print(f'downsampling...')
