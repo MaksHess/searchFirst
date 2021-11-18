@@ -31,7 +31,7 @@ def main():
         parser = argparse.ArgumentParser(
             description="SearchFirst imaging of wells based on matching a template image. ")
         parser.add_argument(dest='folder', type=str, help='Full path to folder of first pass.')
-        parser.add_argument('-n', '--n_objects_per_site', type=int, default=3)
+        parser.add_argument('-n', '--n_objects_per_site', type=int, default=6)
         parser.add_argument('-ot', '--object_threshold', type=float, default=0.5,
                             help='Threshold [0.0 - 1.0] for rejecting objects (default 0.5).')
         parser.add_argument('-d', '--downsampling', type=float, default=0.25,
@@ -80,7 +80,11 @@ def run_processing(fld, object_threshold, downsampling, n_objects_per_site, temp
         n_objects = np.sum(maxima)
         logging.info(f'{n_objects} objects found...')
         score = match[np.where(maxima)]
-        nth_largest_score = -np.partition(-score, n_objects_per_site-1)[n_objects_per_site-1]
+        n_actual = n_objects_per_site
+        if n_objects < n_objects_per_site:
+            logging.warning(f"only {n_objects} objects found instead of {n_objects_per_site}")
+            n_actual = n_objects
+        nth_largest_score = -np.partition(-score, n_actual-1)[n_actual-1]
         weighted_maxima = np.where(maxima, match, 0)
         selected_maxima = np.where(weighted_maxima >= nth_largest_score, weighted_maxima, 0)
 
