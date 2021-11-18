@@ -11,8 +11,9 @@ from collections import deque
 
 
 def main():
-    select_cycles = [0, 1, 2, 3, 4, 5]
+    select_cycles = [0, 1, 2]
     fn = r"Z:\hmax\SearchFirst\20210823-FirstPassMeasurement_20210823_113818\AssayPlate_Greiner_#655090\1009602002_Greiner_#655090.wpp"
+    fld = Path(r"Z:\hmax\Zebrafish\20211114_96well_AntibodyElutions")
     data = PlateData.from_file(fn)
     print('data loaded...')
     plate = Plate(data)
@@ -53,7 +54,6 @@ def main():
         view_current_cycle(viewer, current_cycle, previous_cycle)
         wells.properties['cycle_deque'].rotate(2)
 
-    fld = Path(r"Z:\hmax\Zebrafish\20210907_96wellFibronectinPolyL-UV#3")
     for well in available_wells(fld):
         color = cycle(['red', 'green', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue'])
         count = 0

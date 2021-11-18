@@ -13,10 +13,10 @@ def available_wells(fld, return_sorted=True):
     return well_names
 
 
-def load_well(fld, well_name):
+def load_well(fld, well_name, channel):
     names = []
     imgs = []
-    for fn in fld.rglob(f"*_{well_name}_*.tif"):
+    for fn in fld.rglob(f"*_{well_name}_*{channel}.tif"):
         names.append(fn)
         imgs.append(imageio.imread(fn))
     return names, imgs

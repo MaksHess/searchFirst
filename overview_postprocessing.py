@@ -10,6 +10,7 @@ def main():
         description="Post processing for well overviews.")
     parser.add_argument(dest='folder', type=Path, help='Full path to folder of overview acquisition.')
     parser.add_argument('-d', '--downsampling', type=float, default=0.5)
+    parser.add_argument('-c', '--channel', type=str, defaul='C02')
     parser.add_argument('--alert', action='store_true')
     args = parser.parse_args()
     out_folder = args.folder / 'stitched'
