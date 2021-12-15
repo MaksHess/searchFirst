@@ -5,15 +5,15 @@ from typing import Union
 import numpy as np
 import re
 import imageio
-from utils import available_wells
+from utils import stitched_wells
 from itertools import cycle
 from collections import deque
 
 
 def main():
-    select_cycles = [0, 1, 2]
+    select_cycles = [0, 1, 2, 3, 4]
     fn = r"Z:\hmax\SearchFirst\20210823-FirstPassMeasurement_20210823_113818\AssayPlate_Greiner_#655090\1009602002_Greiner_#655090.wpp"
-    fld = Path(r"Z:\hmax\Zebrafish\20211114_96well_AntibodyElutions")
+    fld = Path(r"M:\marvwy\20211129_elu3")
     data = PlateData.from_file(fn)
     print('data loaded...')
     plate = Plate(data)
@@ -54,7 +54,7 @@ def main():
         view_current_cycle(viewer, current_cycle, previous_cycle)
         wells.properties['cycle_deque'].rotate(2)
 
-    for well in available_wells(fld):
+    for well in stitched_wells(fld):
         color = cycle(['red', 'green', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue'])
         count = 0
         visible = True

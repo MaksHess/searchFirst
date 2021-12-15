@@ -13,6 +13,13 @@ def available_wells(fld, return_sorted=True):
     return well_names
 
 
+def stitched_wells(fld, return_sorted=True):
+    pattern = re.compile(r'.*([A-H][0-1]\d).png')
+    well_names = set(pattern.match(e.name).group(1) for e in fld.rglob("*") if pattern.match(e.name))
+    if return_sorted:
+        return sorted(well_names)
+    return well_names
+
 def load_well(fld, well_name, channel):
     names = []
     imgs = []
