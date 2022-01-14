@@ -18,7 +18,7 @@ def main():
 
     for well in available_wells(args.folder):
         print(f"Processing well {well}...")
-        out_fn = out_folder / f"{well}.png"
+        out_fn = out_folder / f"{well}_{args.channel}.png"
         if out_fn.exists():
             print(f"Processed already.")
             print()

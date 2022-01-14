@@ -20,7 +20,7 @@ def stitched_wells(fld, return_sorted=True):
         return sorted(well_names)
     return well_names
 
-def load_well(fld, well_name, channel):
+def load_well(fld, well_name, channel='C02'):
     names = []
     imgs = []
     for fn in sorted(fld.rglob(f"*_{well_name}_*{channel}.tif")):
