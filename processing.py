@@ -13,8 +13,10 @@ try:
     from pathlib import Path
     import numpy as np
     from skimage.feature import match_template
-    from skimage.morphology import extrema
+    from skimage.morphology import extrema, remove_small_objects
     from scipy.ndimage import zoom
+    from skimage import filters
+    from skimage.measure import label, regionprops
     import matplotlib.pyplot as plt
     import seaborn as sns
     import csv
@@ -26,42 +28,38 @@ except Exception as import_exception:
 
 
 def main():
-    logging.info('starting main...')
-    try:
-        parser = argparse.ArgumentParser(
-            description="SearchFirst imaging of wells based on matching a template image. ")
-        parser.add_argument(dest='folder', type=str, help='Full path to folder of first pass.')
-        parser.add_argument('-n', '--n_objects_per_site', type=int, default=6)
-        parser.add_argument('-ot', '--object_threshold', type=float, default=0.5,
-                            help='Threshold [0.0 - 1.0] for rejecting objects (default 0.5).')
-        parser.add_argument('-d', '--downsampling', type=float, default=0.25,
-                            help='Downsampling ratio to speed up processing (default 0.25).')
-        parser.add_argument('-t', '--template_path', type=str,
-                            help='Full path to template image. Default is to search for `template.tif` in the folder.')
-        parser.add_argument('-p', '--plot_output', type=bool, default=True,
-                            help='Whether to generate plots of the results.')
+    # Parse Arguments
+    parser = argparse.ArgumentParser(
+        description="SearchFirst imaging of wells based on matching a template stitched_ds. ")
+    parser.add_argument(dest='folder', type=str, help='Full path to folder of first pass.')
+    parser.add_argument('-d', '--downsampling', type=float, default=0.25,
+                        help='Downsampling ratio to speed up processing (default 0.25).')
+    parser.add_argument('-n', '--n_objects_per_site', type=int, default=6)
+    parser.add_argument('-p', '--plot_output', type=bool, default=True,
+                        help='Whether to generate plots of the results.')
+    parser.add_argument('-m', '--method', type=str, default='template',
+                        help="""Method to use for object detection. Either `template` or `threshold`. Make sure you 
+                        specify the required arguments for the method you chose.""")
 
-        args = parser.parse_args()
-        run_processing(args.folder, args.object_threshold, args.downsampling, args.n_objects_per_site,
-                       args.template_path, args.plot_output)
-    except Exception as runtime_exception:
-        logging.error(f'{runtime_exception}')
+    # Template machting arguments
+    parser.add_argument('-ot', '--object_threshold', type=float, default=0.5,
+                        help='Threshold [0.0 - 1.0] for rejecting objects (default 0.5).')
+    parser.add_argument('-t', '--template_path', type=str, default=None,
+                        help='Full path to template stitched_ds. Default is to search for `template.tif` in the folder.')
 
+    # Thresholding arguments
+    parser.add_argument('-s', '--sigma', type=float, default=7,
+                        help='Sigma of the gaussian filter to apply before thresholding.')
+    parser.add_argument('-mos', '--minimum_object_size', type=int, default=1000,
+                        help='Minimum object size in pixels in the downsampled stitched_ds.')
 
-def run_processing(fld, object_threshold, downsampling, n_objects_per_site, template_path=None, plot_output=True):
-    fld = Path(fld)
+    args = parser.parse_args()
 
+    fld = Path(args.folder)
     if not fld.is_dir():
         raise NotADirectoryError(f"Directory {fld.as_posix()} does not exist!")
 
     logging.info(f'processing folder {fld.as_posix()}')
-    if template_path is None:
-        template_path = Path(r'C:\Users\CVUser\Documents\Python\searchFirst\templates\template_ZE_10x.tif')
-    logging.info(f"loading template from {template_path}...")
-    template = imageio.imread(template_path)
-
-    template_ds = zoom(template, downsampling)
-
     for well in list(available_wells(fld)):
         logging.info(f'processing well {well}...')
         logging.info('loading images...')
@@ -69,40 +67,92 @@ def run_processing(fld, object_threshold, downsampling, n_objects_per_site, temp
         logging.info(f'processing {len(imgs)} images...')
         stitched = stitch_arrays(imgs, ny=5, nx=4)
 
-        stitched_ds = zoom(stitched, downsampling)
+        stitched_ds = zoom(stitched, args.downsampling)
 
-        match = match_template(stitched_ds, template_ds, pad_input=True, mode='constant', constant_values=100)
-        match_thresholded = np.where(match > object_threshold, match, 0)
-        if np.sum(match_thresholded) == 0:
-            logging.warning(f"no matches found in {well}! Try lowering the `object_threshold` if you expected to find matches in this well.")
-            continue
-        maxima = extrema.h_maxima(match_thresholded, h=object_threshold)
-        n_objects = np.sum(maxima)
-        logging.info(f'{n_objects} objects found...')
-        score = match[np.where(maxima)]
-        n_actual = n_objects_per_site
-        if n_objects < n_objects_per_site:
-            logging.warning(f"only {n_objects} objects found instead of {n_objects_per_site}")
-            n_actual = n_objects
-        nth_largest_score = -np.partition(-score, n_actual-1)[n_actual-1]
-        weighted_maxima = np.where(maxima, match, 0)
-        selected_maxima = np.where(weighted_maxima >= nth_largest_score, weighted_maxima, 0)
+        if args.method == 'template':
+            objects, non_objects = find_objects_by_template_matching(stitched_ds,
+                                                                     object_threshold=args.object_threshold,
+                                                                     template_path=args.template_path,
+                                                                     downsampling=args.downsampling,
+                                                                     n_objects_per_site=args.n_objects_per_site,
+                                                                     well=well,
+                                                                     )
+        elif args.method == 'threshold':
+            objects, non_objects = find_objects_by_threshold(stitched_ds,
+                                                             sigma=args.sigma,
+                                                             minimum_object_size=args.minimum_object_size,
+                                                             )
+        else:
+            raise NotImplementedError(f"Method `{args.method}` is not available. Use either `template` or `threshold`.")
 
-        if plot_output:
-            unselected_maxima = np.where(np.logical_and(weighted_maxima > 0, weighted_maxima < nth_largest_score),
-                                         weighted_maxima, 0)
-            plot_results(stitched_ds, selected_maxima, unselected_maxima, out_file=fld / f'plot_{well}.png')
+        if args.plot_output:
+            plot_results(stitched_ds, objects, non_objects, out_file=fld / f'plot_{well}.png')
 
-        site_maxima = unstitch_arrays(selected_maxima, ny=5, nx=4)
+        site_objects = unstitch_arrays(objects, ny=5, nx=4)
 
-        for name, site_maximum in zip(names, site_maxima):
-            ys, xs = np.where(site_maximum)
+        for name, site_object in zip(names, site_objects):
+            ys, xs = np.where(site_object)
             if len(xs) > 0:
                 cv_name = name.parent / f'{name.stem}.csv'
                 with open(cv_name, 'w', newline='') as f:
                     c = csv.writer(f)
                     for i, (x, y) in enumerate(zip(xs, ys)):
-                        c.writerow([i + 1, int(x / downsampling), int(y / downsampling)])
+                        c.writerow([i + 1, int(x / args.downsampling), int(y / args.downsampling)])
+
+
+def find_objects_by_template_matching(stitched_ds, object_threshold, template_path, downsampling, well,
+                                      n_objects_per_site):
+    if template_path is None:
+        template_path = Path(r'C:\Users\CVUser\Documents\Python\searchFirst\templates\template_ZE_9x.tif')
+    logging.info(f"loading template from {template_path}...")
+    template = imageio.imread(template_path)
+    template_ds = zoom(template, downsampling)
+
+    match = match_template(stitched_ds, template_ds, pad_input=True, mode='constant', constant_values=100)
+    match_thresholded = np.where(match > object_threshold, match, 0)
+    if np.sum(match_thresholded) == 0:
+        logging.warning(
+            f"no matches found in {well}! Try lowering the `object_threshold` if you expected to find matches in this well.")
+        return np.zeros_like(stitched_ds), np.zeros_like(stitched_ds)
+    maxima = extrema.h_maxima(match_thresholded, h=object_threshold)
+    n_objects = np.sum(maxima)
+    logging.info(f'{n_objects} objects found...')
+    score = match[np.where(maxima)]
+    n_actual = n_objects_per_site
+    if n_objects < n_objects_per_site:
+        logging.warning(f"only {n_objects} objects found instead of {n_objects_per_site}")
+        n_actual = n_objects
+    nth_largest_score = -np.partition(-score, n_actual - 1)[n_actual - 1]
+    weighted_maxima = np.where(maxima, match, 0)
+    selected_objects = np.where(weighted_maxima >= nth_largest_score, weighted_maxima, 0)
+    unselected_objects = np.where(np.logical_and(weighted_maxima > 0, weighted_maxima < nth_largest_score),
+                                  weighted_maxima, 0)
+    return selected_objects, unselected_objects
+
+
+def find_objects_by_threshold(stitched_ds, sigma, minimum_object_size):
+    # Normalize stitched_ds
+    img = stitched_ds / np.amax(stitched_ds)
+    # initialize canvas of zeroes
+    selected_objects = np.zeros(img.shape)
+
+    gaussian = filters.gaussian(img, sigma=sigma)
+
+    threshold_gaussian = filters.threshold_otsu(gaussian)
+
+    binary_gaussian = gaussian >= threshold_gaussian
+
+    masked = remove_small_objects(binary_gaussian, minimum_object_size)
+
+    labeled_blobs = label(masked)
+
+    props = regionprops(labeled_blobs)
+
+    for props in props:
+        a = props.centroid
+        selected_objects[int(a[0]), int(a[1])] = 1
+
+    return selected_objects, np.zeros_like(selected_objects)
 
 
 def plot_results(stitched, selected_maxima, unselected_maxima, out_file=None, ny=5, nx=4):
