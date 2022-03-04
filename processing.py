@@ -38,8 +38,9 @@ def main():
     parser.add_argument('-p', '--plot_output', type=bool, default=True,
                         help='Whether to generate plots of the results.')
     parser.add_argument('-m', '--method', type=str, default='template',
-                        help="""Method to use for object detection. Either `template` or `threshold`. Make sure you 
+                        help="""Method to use for object detection. Either `template` or `threshold`. Make sure you
                         specify the required arguments for the method you chose.""")
+    parser.add_argument('-ch', '--channel', type=str, default='C02', help='Channel of the overview acquisition.')
 
     # Template machting arguments
     parser.add_argument('-ot', '--object_threshold', type=float, default=0.5,
@@ -63,7 +64,7 @@ def main():
     for well in list(available_wells(fld)):
         logging.info(f'processing well {well}...')
         logging.info('loading images...')
-        names, imgs = load_well(fld, well)
+        names, imgs = load_well(fld, well, channel=args.channel)
         logging.info(f'processing {len(imgs)} images...')
         stitched = stitch_arrays(imgs, ny=5, nx=4)
 
