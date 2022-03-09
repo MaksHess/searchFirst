@@ -8,27 +8,27 @@ logging.basicConfig(
     ]
 )
 
-try:
-    import imageio
-    from pathlib import Path
-    import numpy as np
-    from skimage.feature import match_template
-    from skimage.morphology import extrema, remove_small_objects
-    from scipy.ndimage import zoom
-    from skimage import filters
-    from skimage.measure import label, regionprops
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import csv
-    import argparse
-    from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, get_xml_mes_template_from_file, \
-        get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
-        XML_NAMESPACES, replace_namespace_tag, ET
-    import random
-    from processing import find_objects_by_threshold, find_objects_by_template_matching, plot_results
-    import warnings
-except Exception as import_exception:
-    logging.error(f'{import_exception}')
+import imageio
+from pathlib import Path
+import numpy as np
+from skimage.feature import match_template
+from skimage.morphology import extrema, remove_small_objects
+from scipy.ndimage import zoom
+from skimage import filters
+from skimage.measure import label, regionprops
+import matplotlib.pyplot as plt
+import seaborn as sns
+import csv
+import argparse
+from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, get_xml_mes_template_from_file, \
+    get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
+    XML_NAMESPACES, replace_namespace_tag, ET
+import random
+from processing import find_objects_by_threshold, find_objects_by_template_matching, plot_results
+import warnings
+
+X_OFFSET_PX = -140
+Y_OFFSET_PX = 70
 
 
 def main():
@@ -122,6 +122,8 @@ def main():
 
         pointsequence_element = timeline.find('.//bts:FixedPosition', XML_NAMESPACES)  # append points here
         for y, x in object_positions:
+            y = y + Y_OFFSET_PX / pixel_scale[0]
+            x = x + X_OFFSET_PX / pixel_scale[1]
             point = get_xml_point(x=x, y=y)
             pointsequence_element.append(point)
 

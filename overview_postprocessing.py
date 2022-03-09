@@ -11,6 +11,8 @@ def main():
     parser.add_argument(dest='folder', type=Path, help='Full path to folder of overview acquisition.')
     parser.add_argument('-d', '--downsampling', type=float, default=0.5)
     parser.add_argument('-c', '--channel', type=str, default='C02')
+    parser.add_argument('-ny', '--n_tiles_y', type=int, default=5)
+    parser.add_argument('-nx', '--n_tiles_x', type=int, default=4)
     parser.add_argument('--alert', action='store_true')
     args = parser.parse_args()
     out_folder = args.folder / 'stitched'
@@ -26,7 +28,7 @@ def main():
         print(f'Loading files...')
         names, tiles = load_well(args.folder, well, channel=args.channel)
         print(f'stitching...')
-        stitched = stitch_arrays(tiles)
+        stitched = stitch_arrays(tiles, ny=args.n_tiles_y, nx=args.n_tiles_x)
         print(f'downsampling...')
         stitched_ds = zoom(stitched, args.downsampling)
         print(f'writing file {out_fn.name}...')
