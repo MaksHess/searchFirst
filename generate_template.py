@@ -9,11 +9,14 @@ from utils import available_wells, load_well, stitch_arrays
 def main():
     fld = Path(sys.argv[1])
 
+    nx = ny = 3
+    ch = 'C01'
+
     imgs = []
     for w in available_wells(fld):
         print(w)
-        _, tiles = load_well(fld, well_name=w)
-        imgs.append(stitch_arrays(tiles))
+        _, tiles = load_well(fld, well_name=w, channel=ch)
+        imgs.append(stitch_arrays(tiles, nx=nx, ny=ny))
 
     viewer = napari.Viewer()
     viewer.add_image(np.stack(imgs))
