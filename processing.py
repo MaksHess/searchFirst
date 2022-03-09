@@ -13,7 +13,7 @@ try:
     from pathlib import Path
     import numpy as np
     from skimage.feature import match_template
-    from skimage.morphology import extrema, remove_small_objects
+    from skimage.morphology import local_maxima, remove_small_objects
     from scipy.ndimage import zoom
     from skimage import filters
     from skimage.measure import label, regionprops
@@ -115,7 +115,7 @@ def find_objects_by_template_matching(stitched_ds, object_threshold, template_pa
         logging.warning(
             f"no matches found in {well}! Try lowering the `object_threshold` if you expected to find matches in this well.")
         return np.zeros_like(stitched_ds), np.zeros_like(stitched_ds)
-    maxima = extrema.h_maxima(match_thresholded, h=object_threshold)
+    maxima = local_maxima(match_thresholded)
     n_objects = np.sum(maxima)
     logging.info(f'{n_objects} objects found...')
     score = match[np.where(maxima)]
