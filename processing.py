@@ -20,6 +20,7 @@ try:
     import matplotlib.pyplot as plt
     import seaborn as sns
     import csv
+    import napari
     import argparse
     from utils import available_wells, load_well, stitch_arrays, unstitch_arrays
     import random
@@ -38,7 +39,7 @@ def main():
     parser.add_argument('-p', '--plot_output', type=bool, default=True,
                         help='Whether to generate plots of the results.')
     parser.add_argument('-m', '--method', type=str, default='template',
-                        help="""Method to use for object detection. Either `template`, 'multi-template' or `threshold`. Make sure you
+                        help="""Method to use for object detection. Either `template`, 'multi-template', `threshold` or 'manual'. Make sure you
                         specify the required arguments for the method you chose.""")
     parser.add_argument('-ch', '--channel', type=str, default='C02', help='Channel of the overview acquisition.')
 
@@ -92,6 +93,9 @@ def main():
                                                              sigma=args.sigma,
                                                              minimum_object_size=args.minimum_object_size,
                                                              )
+        elif args.method == 'manual':
+            objects, non_objects = find_objects_by_manual_annotation(stitched_ds,
+                                                                     )
         else:
             raise NotImplementedError(f"Method `{args.method}` is not available. Use either `template`, 'multi-template' or `threshold`.")
 
@@ -218,6 +222,25 @@ def find_objects_by_threshold(stitched_ds, sigma, minimum_object_size):
         selected_objects[int(a[0]), int(a[1])] = 1
 
     return selected_objects, np.zeros_like(selected_objects)
+
+
+def find_objects_by_manual_annotation(stitched_ds):
+
+    viewer = napari.Viewer()
+    viewer.add_image(stitched_ds)
+    viewer.add_points(None)
+    napari.run()
+
+    # after the viewer is closed, the following will be executed:
+    coords = viewer.layers['Points'].data
+    n_objects = len(coords)
+    logging.info(f'{n_objects} coordinates were annotated...')
+    selected_objects = np.empty(np.shape(stitched_ds))
+    selected_objects[coords[:, 0].astype('int'),
+                     coords[:, 1].astype('int')] = 1
+    unselected_objects = np.empty(np.shape(stitched_ds))
+
+    return selected_objects, unselected_objects
 
 
 def plot_results(stitched, selected_maxima, unselected_maxima, out_file=None, ny=5, nx=4):
