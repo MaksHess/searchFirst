@@ -228,6 +228,9 @@ def find_objects_by_manual_annotation(stitched_ds):
 
     viewer = napari.Viewer()
     viewer.add_image(stitched_ds)
+    # rescale stitched image
+    low, high = np.quantile(stitched_ds, [0.0001, 0.9999])
+    viewer.layers['stitched_ds'].contrast_limits = [low, high]
     viewer.add_points(None)
     napari.run()
 
