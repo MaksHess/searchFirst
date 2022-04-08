@@ -234,7 +234,10 @@ def find_objects_by_manual_annotation(stitched_ds):
     # after the viewer is closed, the following will be executed:
     coords = viewer.layers['Points'].data
     n_objects = len(coords)
-    logging.info(f'{n_objects} coordinates were annotated...')
+    if n_objects == 0:
+        logging.warning('no coordinates were annotated...')
+    else:
+        logging.info(f'{n_objects} coordinates were annotated...')
     selected_objects = np.empty(np.shape(stitched_ds))
     selected_objects[coords[:, 0].astype('int'),
                      coords[:, 1].astype('int')] = 1
