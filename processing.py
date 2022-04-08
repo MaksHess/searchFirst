@@ -225,7 +225,6 @@ def find_objects_by_threshold(stitched_ds, sigma, minimum_object_size):
 
 
 def find_objects_by_manual_annotation(stitched_ds):
-
     viewer = napari.Viewer()
     viewer.add_image(stitched_ds)
     # rescale stitched image
