@@ -231,6 +231,7 @@ def find_objects_by_manual_annotation(stitched_ds):
     low, high = np.quantile(stitched_ds, [0.0001, 0.9999])
     viewer.layers['stitched_ds'].contrast_limits = [low, high]
     viewer.add_points(None)
+    viewer.layers['Points'].mode = 'add'
     napari.run()
 
     # after the viewer is closed, the following will be executed:
