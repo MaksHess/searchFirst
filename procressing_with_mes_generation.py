@@ -1,4 +1,17 @@
 import logging
+from pathlib import Path
+import numpy as np
+from scipy.ndimage import zoom
+import argparse
+from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, get_xml_mes_template_from_file, \
+    get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
+    XML_NAMESPACES, ET
+from processing_methods import find_objects_by_threshold, \
+    find_objects_by_template_matching, \
+    find_objects_by_multiple_template_matching, \
+    find_objects_by_manual_annotation, \
+    plot_results
+import warnings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -7,29 +20,6 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
-import imageio
-from pathlib import Path
-import numpy as np
-from skimage.feature import match_template
-from skimage.morphology import extrema, remove_small_objects
-from scipy.ndimage import zoom
-from skimage import filters
-from skimage.measure import label, regionprops
-import matplotlib.pyplot as plt
-import seaborn as sns
-import csv
-import argparse
-from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, get_xml_mes_template_from_file, \
-    get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
-    XML_NAMESPACES, replace_namespace_tag, ET
-import random
-from processing import find_objects_by_threshold, \
-    find_objects_by_template_matching, \
-    find_objects_by_multiple_template_matching, \
-    find_objects_by_manual_annotation, \
-    plot_results
-import warnings
 
 X_OFFSET_PX = -140
 Y_OFFSET_PX = 70
