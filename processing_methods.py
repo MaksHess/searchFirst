@@ -4,8 +4,6 @@ import napari
 import numpy as np
 from skimage import filters
 from skimage.measure import label, regionprops
-import matplotlib.pyplot as plt
-import seaborn as sns
 from skimage.feature import match_template
 from skimage.morphology import local_maxima, remove_small_objects
 from scipy.ndimage import zoom
@@ -144,23 +142,3 @@ def find_objects_by_manual_annotation(stitched_ds):
     unselected_objects = np.empty(np.shape(stitched_ds))
 
     return selected_objects, unselected_objects
-
-
-def plot_results(stitched, selected_maxima, unselected_maxima, out_file=None, ny=5, nx=4):
-    fig, ax = plt.subplots(figsize=(12, 12))
-    plt.imshow(stitched, cmap='gray')
-    y_true, x_true = np.where(selected_maxima)
-    y_false, x_false = np.where(unselected_maxima)
-    sns.scatterplot(x=x_true, y=y_true, color='#35d130', s=90)
-    sns.scatterplot(x=x_false, y=y_false, color='#e63232', s=90)
-    ax.set_yticks(np.arange(ny) * stitched.shape[0] / ny)
-    ax.set_xticks(np.arange(nx) * stitched.shape[1] / nx)
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    ax.tick_params(length=0)
-    plt.grid()
-    plt.tight_layout()
-    if out_file:
-        plt.savefig(out_file)
-    else:
-        plt.show()

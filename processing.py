@@ -4,12 +4,11 @@ import numpy as np
 from scipy.ndimage import zoom
 import csv
 import argparse
-from utils import available_wells, load_well, stitch_arrays, unstitch_arrays
+from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, plot_results
 from processing_methods import find_objects_by_threshold, \
     find_objects_by_template_matching, \
     find_objects_by_multiple_template_matching, \
-    find_objects_by_manual_annotation, \
-    plot_results
+    find_objects_by_manual_annotation
 
 logging.basicConfig(
     level=logging.INFO,

@@ -2,6 +2,8 @@ import re
 import imageio
 import numpy as np
 import xml.etree.ElementTree as ET
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 XML_NAMESPACES = {'bts': 'http://www.yokogawa.co.jp/BTS/BTSSchema/1.0'}
 ROW_MAP = {k: v for k, v in zip('ABCDEFGHIJKLMNOP', range(1, 16 + 1))}
@@ -145,6 +147,25 @@ def unstitch_arrays(stitched, ny=5, nx=4):
         y = i // nx
         out.append(stitched[y * dy:y * dy + dy, x * dx:x * dx + dx].copy())
     return out
+
+def plot_results(stitched, selected_maxima, unselected_maxima, out_file=None, ny=5, nx=4):
+    fig, ax = plt.subplots(figsize=(12, 12))
+    plt.imshow(stitched, cmap='gray')
+    y_true, x_true = np.where(selected_maxima)
+    y_false, x_false = np.where(unselected_maxima)
+    sns.scatterplot(x=x_true, y=y_true, color='#35d130', s=90)
+    sns.scatterplot(x=x_false, y=y_false, color='#e63232', s=90)
+    ax.set_yticks(np.arange(ny) * stitched.shape[0] / ny)
+    ax.set_xticks(np.arange(nx) * stitched.shape[1] / nx)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.tick_params(length=0)
+    plt.grid()
+    plt.tight_layout()
+    if out_file:
+        plt.savefig(out_file)
+    else:
+        plt.show()
 
 
 if __name__ == '__main__':

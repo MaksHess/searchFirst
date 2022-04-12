@@ -5,12 +5,11 @@ from scipy.ndimage import zoom
 import argparse
 from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, get_xml_mes_template_from_file, \
     get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
-    XML_NAMESPACES, ET
+    XML_NAMESPACES, ET, plot_results
 from processing_methods import find_objects_by_threshold, \
     find_objects_by_template_matching, \
     find_objects_by_multiple_template_matching, \
-    find_objects_by_manual_annotation, \
-    plot_results
+    find_objects_by_manual_annotation
 import warnings
 
 logging.basicConfig(
