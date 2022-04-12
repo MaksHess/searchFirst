@@ -24,7 +24,11 @@ from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, ge
     get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
     XML_NAMESPACES, replace_namespace_tag, ET
 import random
-from processing import find_objects_by_threshold, find_objects_by_template_matching, plot_results
+from processing import find_objects_by_threshold, \
+    find_objects_by_template_matching, \
+    find_objects_by_multiple_template_matching, \
+    find_objects_by_manual_annotation, \
+    plot_results
 import warnings
 
 X_OFFSET_PX = -140
@@ -44,7 +48,7 @@ def main():
     parser.add_argument('-p', '--plot_output', type=bool, default=True,
                         help='Whether to generate plots of the results.')
     parser.add_argument('-m', '--method', type=str, default='template',
-                        help="""Method to use for object detection. Either `template` or `threshold`. Make sure you 
+                        help="""Method to use for object detection. Either `template`, 'multi-template', `threshold` or 'manual'. Make sure you 
                         specify the required arguments for the method you chose.""")
     parser.add_argument('-nx', '--n_tiles_x', type=int, default=4, help='Number of tiles per well in x.')
     parser.add_argument('-ny', '--n_tiles_y', type=int, default=5, help='Number of tiles per well in y.')
@@ -54,7 +58,8 @@ def main():
     parser.add_argument('-ot', '--object_threshold', type=float, default=0.5,
                         help='Threshold [0.0 - 1.0] for rejecting objects (default 0.5).')
     parser.add_argument('-t', '--template_path', type=str, default=None,
-                        help='Full path to template stitched_ds. Default is to search for `template.tif` in the folder.')
+                        help="""Full path to template stitched_ds. Default is to search for `template.tif` in the folder.
+                        If method 'multi-template' is used, all tiff files in the folder will be used as template.""")
 
     # Thresholding arguments
     parser.add_argument('-s', '--sigma', type=float, default=7,
@@ -99,11 +104,22 @@ def main():
                                                                      n_objects_per_site=args.n_objects_per_site,
                                                                      well=well,
                                                                      )
+        elif args.method == 'multi-template':
+            objects, non_objects = find_objects_by_multiple_template_matching(stitched_ds,
+                                                                              object_threshold=args.object_threshold,
+                                                                              template_path=args.template_path,
+                                                                              downsampling=args.downsampling,
+                                                                              n_objects_per_site=args.n_objects_per_site,
+                                                                              well=well,
+                                                                              )
         elif args.method == 'threshold':
             objects, non_objects = find_objects_by_threshold(stitched_ds,
                                                              sigma=args.sigma,
                                                              minimum_object_size=args.minimum_object_size,
                                                              )
+        elif args.method == 'manual':
+            objects, non_objects = find_objects_by_manual_annotation(stitched_ds,
+                                                                     )
         else:
             raise NotImplementedError(f"Method `{args.method}` is not available. Use either `template` or `threshold`.")
 
