@@ -8,7 +8,8 @@ from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, pl
 from processing_methods import find_objects_by_threshold, \
     find_objects_by_template_matching, \
     find_objects_by_multiple_template_matching, \
-    find_objects_by_manual_annotation
+    find_objects_by_manual_annotation, \
+    find_objects_by_semiautomatic_annotation
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,6 +27,8 @@ def main():
     parser.add_argument('-d', '--downsampling', type=float, default=0.25,
                         help='Downsampling ratio to speed up processing (default 0.25).')
     parser.add_argument('-n', '--n_objects_per_site', type=int, default=6)
+    parser.add_argument('-nx', '--n_tiles_x', type=int, default=3, help='Number of tiles per well in x.')
+    parser.add_argument('-ny', '--n_tiles_y', type=int, default=3, help='Number of tiles per well in y.')
     parser.add_argument('-p', '--plot_output', type=bool, default=True,
                         help='Whether to generate plots of the results.')
     parser.add_argument('-m', '--method', type=str, default='template',
@@ -86,6 +89,13 @@ def main():
         elif args.method == 'manual':
             objects, non_objects = find_objects_by_manual_annotation(stitched_ds,
                                                                      )
+
+        elif args.method == 'semiautomatic_threshold':
+            objects, non_objects = find_objects_by_semiautomatic_annotation(stitched_ds,
+                                                                            sigma=args.sigma,
+                                                                            minimum_object_size=args.minimum_object_size,
+                                                                            )
+
         else:
             raise NotImplementedError(f"Method `{args.method}` is not available. Use either `template`, 'multi-template' or `threshold`.")
 
