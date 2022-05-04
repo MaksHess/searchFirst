@@ -1,16 +1,18 @@
+import argparse
 import logging
+import warnings
 from pathlib import Path
+
 import numpy as np
 from scipy.ndimage import zoom
-import argparse
-from utils import available_wells, load_well, stitch_arrays, unstitch_arrays, get_xml_mes_template_from_file, \
-    get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
-    XML_NAMESPACES, ET, plot_results
+
 from processing_methods import find_objects_by_threshold, \
     find_objects_by_template_matching, \
     find_objects_by_multiple_template_matching, \
     find_objects_by_manual_annotation
-import warnings
+from utils import available_wells, load_well, stitch_arrays, get_xml_mes_template_from_file, \
+    get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
+    XML_NAMESPACES, ET, plot_results, estimate_time_for_timeline, PREFIX
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,6 +44,8 @@ def main():
     parser.add_argument('-nx', '--n_tiles_x', type=int, default=4, help='Number of tiles per well in x.')
     parser.add_argument('-ny', '--n_tiles_y', type=int, default=5, help='Number of tiles per well in y.')
     parser.add_argument('-ch', '--channel', type=str, default='C02', help='Channel name to process.')
+    parser.add_argument('-op', '--optimize_time_estimate', type=bool, default=True,
+                        help='If set to true the time per well is calculated, can lead to faster acquisitions.')
 
     # Template machting arguments
     parser.add_argument('-ot', '--object_threshold', type=float, default=0.5,
@@ -69,6 +73,8 @@ def main():
     template_tree = get_xml_mes_template_from_file(second_pass_template_file)
     template_root = template_tree.getroot()
     timelapse_element = template_root.find('.//bts:Timelapse', XML_NAMESPACES)  # append timelines here
+    channellist = template_root.find('.//bts:ChannelList', XML_NAMESPACES)  # used to extract exposure times
+    current_start_time = 0  # keep track of the starting times for better time estimates
 
     action_list = get_xml_action_list_from_file(second_pass_template_file)
 
@@ -131,6 +137,13 @@ def main():
             x = x + X_OFFSET_PX / pixel_scale[1]
             point = get_xml_point(x=x, y=y)
             pointsequence_element.append(point)
+
+        if args.optimize_time_estimate:
+            estimated_time = estimate_time_for_timeline(timeline, channellist)
+            timeline.set(PREFIX + 'OverrideExpectedTime', 'true')
+            timeline.set(PREFIX + 'InitialTime', str(current_start_time))
+            timeline.set(PREFIX + 'ExpectedTime', str(estimated_time))
+            current_start_time += estimated_time
 
         timelapse_element.append(timeline)
 
