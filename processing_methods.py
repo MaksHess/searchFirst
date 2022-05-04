@@ -142,3 +142,34 @@ def find_objects_by_manual_annotation(stitched_ds):
     unselected_objects = np.empty(np.shape(stitched_ds))
 
     return selected_objects, unselected_objects
+
+
+def find_objects_by_semiautomatic_annotation(stitched_ds, sigma, minimum_object_size):
+    objects, non_objects = find_objects_by_threshold(stitched_ds,
+                                                     sigma,
+                                                     minimum_object_size,
+                                                     )
+    Points = np.stack(np.where(objects)).T
+
+    viewer = napari.Viewer()
+    viewer.add_image(stitched_ds)
+    # rescale stitched image
+    low, high = np.quantile(stitched_ds, [0.0001, 0.9999])
+    viewer.layers['stitched_ds'].contrast_limits = [low, high]
+    viewer.add_points(Points, symbol = 'ring', size = 100)
+    viewer.layers['Points'].mode = 'add'
+    viewer.show(block=True)
+
+    # after the viewer is closed, the following will be executed:
+    coords = viewer.layers['Points'].data
+    n_objects = len(coords)
+    if n_objects == 0:
+        logging.warning('no coordinates were annotated...')
+    else:
+        logging.info(f'{n_objects} coordinates were annotated...')
+    selected_objects = np.empty(np.shape(stitched_ds))
+    selected_objects[coords[:, 0].astype('int'),
+                     coords[:, 1].astype('int')] = 1
+    unselected_objects = np.empty(np.shape(stitched_ds))
+
+    return selected_objects, unselected_objects

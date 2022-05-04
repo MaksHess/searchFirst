@@ -9,6 +9,10 @@ from scipy.ndimage import zoom
 from processing_methods import find_objects_by_threshold, \
     find_objects_by_template_matching, \
     find_objects_by_multiple_template_matching, \
+    find_objects_by_manual_annotation, \
+    find_objects_by_semiautomatic_annotation
+
+import warnings
     find_objects_by_manual_annotation
 from utils import available_wells, load_well, stitch_arrays, get_xml_mes_template_from_file, \
     get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
@@ -39,7 +43,7 @@ def main():
     parser.add_argument('-p', '--plot_output', type=bool, default=True,
                         help='Whether to generate plots of the results.')
     parser.add_argument('-m', '--method', type=str, default='template',
-                        help="""Method to use for object detection. Either `template`, 'multi-template', `threshold` or 'manual'. Make sure you 
+                        help="""Method to use for object detection. Either `template`, 'multi-template', `threshold` or 'manual'. Make sure you
                         specify the required arguments for the method you chose.""")
     parser.add_argument('-nx', '--n_tiles_x', type=int, default=4, help='Number of tiles per well in x.')
     parser.add_argument('-ny', '--n_tiles_y', type=int, default=5, help='Number of tiles per well in y.')
@@ -115,6 +119,13 @@ def main():
         elif args.method == 'manual':
             objects, non_objects = find_objects_by_manual_annotation(stitched_ds,
                                                                      )
+
+        elif args.method == 'semiautomatic_threshold':
+            objects, non_objects = find_objects_by_semiautomatic_annotation(stitched_ds,
+                                                                            sigma=args.sigma,
+                                                                            minimum_object_size=args.minimum_object_size,
+                                                                            )
+
         else:
             raise NotImplementedError(f"Method `{args.method}` is not available. Use either `template` or `threshold`.")
 
