@@ -9,6 +9,7 @@ from skimage.morphology import local_maxima, remove_small_objects
 from scipy.ndimage import zoom
 import imageio
 
+
 def find_objects_by_template_matching(stitched_ds, object_threshold, template_path, downsampling, well,
                                       n_objects_per_site):
     if template_path is None:
@@ -149,14 +150,14 @@ def find_objects_by_semiautomatic_annotation(stitched_ds, sigma, minimum_object_
                                                      sigma,
                                                      minimum_object_size,
                                                      )
-    Points = np.stack(np.where(objects)).T
+    points = np.stack(np.where(objects)).T
 
     viewer = napari.Viewer()
     viewer.add_image(stitched_ds)
     # rescale stitched image
     low, high = np.quantile(stitched_ds, [0.0001, 0.9999])
     viewer.layers['stitched_ds'].contrast_limits = [low, high]
-    viewer.add_points(Points, symbol = 'ring', size = 100)
+    viewer.add_points(points, symbol='ring', size=100)
     viewer.layers['Points'].mode = 'add'
     viewer.show(block=True)
 

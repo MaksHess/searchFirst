@@ -1,6 +1,5 @@
 import argparse
 import logging
-import warnings
 from pathlib import Path
 
 import numpy as np
@@ -13,7 +12,6 @@ from processing_methods import find_objects_by_threshold, \
     find_objects_by_semiautomatic_annotation
 
 import warnings
-    find_objects_by_manual_annotation
 from utils import available_wells, load_well, stitch_arrays, get_xml_mes_template_from_file, \
     get_xml_action_list_from_file, get_pixel_scale, get_xml_timeline_template, get_xml_point, get_xml_targetwell, \
     XML_NAMESPACES, ET, plot_results, estimate_time_for_timeline, PREFIX
