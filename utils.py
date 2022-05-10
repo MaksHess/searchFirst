@@ -134,8 +134,8 @@ def available_wells(fld: Path, return_sorted: bool = True) -> List:
 
 
 def stitched_wells(fld: Path, return_sorted: bool = True) -> List:
-    pattern = re.compile(r'.*([A-H][0-1]\d).png')
-    well_names = set(pattern.match(e.name).group(1) for e in fld.rglob("*") if pattern.match(e.name))
+    pattern = re.compile(r'.*/([A-H][0-1]\d)(_C\d\d)?.png')
+    well_names = set(pattern.match(e.as_posix()).group(1) for e in fld.rglob("*") if pattern.match(e.as_posix()))
     if return_sorted:
         return sorted(well_names)
     return list(well_names)
