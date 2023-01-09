@@ -9,7 +9,7 @@ FIND_OBJECTS_STRATEGY: {
 
 def main():
     ...
-    objects, non_objects = FIND_OBJECTS_STRATEGY[args.method]
+    objects, non_objects = FIND_OBJECTS_STRATEGY[args.method](stitched_ds, args)
     ...
 
 
