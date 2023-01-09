@@ -4,7 +4,6 @@ FIND_OBJECTS_STRATEGY: {
     'threshold': find_objects_by_threshold,
     'manual': find_objects_by_manual_annotation,
     'semiautomatic-threshold': find_objects_by_semiautomatic_annotation,
-
 }
 ...
 
