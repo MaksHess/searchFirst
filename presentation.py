@@ -8,8 +8,10 @@ FIND_OBJECTS_STRATEGY: {
 }
 ...
 
-
-objects, non_objects = FIND_OBJECTS_STRATEGY[args.method]
+def main():
+    ...
+    objects, non_objects = FIND_OBJECTS_STRATEGY[args.method]
+    ...
 
 
 
